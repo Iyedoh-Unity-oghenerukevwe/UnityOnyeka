@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <link rel="stylesheet" href="./bootstrap.css">
+    <style>
+        .mw-70 {
+            max-width: 70%;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .fs-10 {
+            font-size: 10px;
+        }
+
+        .h-400 {
+            height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">Chat App</span>
+            <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <div id="chatBox" class="border rounded p-3 mb-3 d-flex flex-column bg-light overflow-auto h-400"></div>
+        <form id="sendForm" class="d-flex">
+            <input type="text" id="message" class="form-control me-2" placeholder="Type message..." required>
+            <button class="btn btn-primary">Send</button>
+        </form>
+    </div>
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="editInput" class="form-control">
+                    <input type="hidden" id="editId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="saveBtn" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="./bootstrap.bundle.js"></script>
+    <script>
+        const API = "https://apeiron.alwaysdata.net/chatapialwaysdata";
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+        let editModal;
+        if (!localStorage.getItem('token')) window.location = 'login.html';
+        document.addEventListener('DOMContentLoaded', () => {
+            editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            document.getElementById('saveBtn').addEventListener('click', saveEdit);
+        });
+        function logout() {
+            localStorage.clear();
+            window.location = 'login.html';
+        }
+        function toggleActions(id) {
+            document.querySelectorAll('.msg-actions').forEach(el => el.classList.add('d-none'));
+            const el = document.getElementById(`actions-${id}`);
+            if (el) el.classList.toggle('d-none');
+        }
+        async function loadMessages() {
+            try {
+                const res = await fetch(`${API}/GetMessages.php`, {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+                const data = await res.json();
+                if (!data.success) return;
+                chatBox.innerHTML = '';
+                const myId = Number(currentUser.id);
+                data.messages.forEach(msg => {
+                    const isMe = Number(msg.sender_id) === myId;
+                    chatBox.innerHTML += `
+<div class="d-flex ${isMe ? 'justify-content-end' : 'justify-content-start'} mb-2">
+<div class="p-2 rounded ${isMe ? 'bg-primary text-white' : 'bg-light text-dark'} mw-70 cursor-pointer" onclick="${isMe ? `toggleActions(${msg.id})` : ''}">
+${!isMe ? `<div class="fw-bold small">${msg.username}</div>` : ''}
+<div>${msg.message} ${msg.is_edited == 1 ? '<span class="small">(edited)</span>' : ''}</div>
+<div class="small text-end ${isMe ? 'text-white-50' : 'text-muted'} fs-10">${msg.created_at}</div>
+${isMe ? `
+<div id="actions-${msg.id}" class="mt-1 d-flex gap-1 msg-actions d-none">
+<button class="btn btn-sm btn-light" onclick="event.stopPropagation(); openEdit(${msg.id}, \`${msg.message.replace(/`/g, '\\`')}\`)">Edit</button>
+<button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteMsg(${msg.id})">Delete</button>
+</div>` : ''}
+</div>
+</div>
+`;
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) { console.log(e) }
+        }
+        document.getElementById('sendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            if (!token) { window.location = 'login.html'; return; }
+            const res = await fetch(`${API}/SendMessages.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ message: message.value })
+            });
+            const data = await res.json();
+            if (data.success) {
+                message.value = '';
+                loadMessages();
+            } else {
+                alert(data.message || 'Send failed');
+            }
+        });
+        function openEdit(id, msg) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editInput').value = msg;
+            toggleActions(id);
+            editModal.show();
+        }
+        async function saveEdit() {
+            const id = document.getElementById('editId').value;
+            const msg = document.getElementById('editInput').value;
+            const token = localStorage.getItem('token');
+            if (!token) { window.location = 'login.html'; return; }
+            const res = await fetch(`${API}/EditMessages.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ message_id: Number(id), message: msg })
+            });
+            const data = await res.json();
+            alert(data.message);
+            if (data.success) {
+                editModal.hide();
+                loadMessages();
+            }
+        }
+        async function deleteMsg(id) {
+            if (!confirm('Delete this message?')) return;
+            const token = localStorage.getItem('token');
+            if (!token) { window.location = 'login.html'; return; }
+            const res = await fetch(`${API}/DeleteMessages.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ message_id: Number(id) })
+            });
+            const data = await res.json();
+            alert(data.message);
+            if (data.success) {
+                loadMessages();
+            }
+        }
+        loadMessages();
+        setInterval(loadMessages, 3000);
+    </script>
+</body>
+
+</html>
