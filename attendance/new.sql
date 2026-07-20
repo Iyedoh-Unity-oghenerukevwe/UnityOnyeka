@@ -1,0 +1,1 @@
+UPDATE `user` SET `token` = 'myprototype123token' WHERE `id` = 1;
