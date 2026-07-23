@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Departments</title>
+
+    <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="font-awesome/css/all.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', sans-serif;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            color:#fff !important;
+            font-weight:bold;
+        }
+
+        .container-box {
+            max-width:800px;
+            margin:60px auto;
+            background:rgba(255,255,255,0.05);
+            padding:35px;
+            border-radius:20px;
+            backdrop-filter:blur(12px);
+            border:1px solid rgba(255,255,255,0.1);
+        }
+
+        .form-control {
+            background:rgba(255,255,255,0.08);
+            border:none;
+            color:#fff;
+        }
+
+        .form-control::placeholder {
+            color:#ccc;
+        }
+
+        .form-control:focus {
+            background:rgba(255,255,255,0.12);
+            color:#fff;
+            box-shadow:none;
+        }
+
+        .btn-primary {
+            background:#b16cea;
+            border:none;
+        }
+
+        .btn-primary:hover {
+            background:#9d4edd;
+        }
+
+        .department-card {
+            background:rgba(255,255,255,0.06);
+            padding:15px;
+            border-radius:12px;
+            margin-bottom:12px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+
+        .edit-icon {
+            color:#b16cea;
+            cursor:pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar px-4">
+    <a href="index.html" class="navbar-brand">
+        <i class="fa-solid fa-arrow-left"></i> Dashboard
+    </a>
+</nav>
+
+
+<div class="container-box">
+
+    <h4>
+        <i class="fa-solid fa-building"></i>
+        Manage Departments
+    </h4>
+
+    <form id="deptform" class="mt-4">
+
+        <div class="mb-3">
+            <input 
+            type="text" 
+            id="deptinput"
+            class="form-control"
+            placeholder="Enter department name e.g Software Engineering">
+        </div>
+
+        <button class="btn btn-primary w-100">
+            <i class="fa-solid fa-plus"></i>
+            Add Department
+        </button>
+
+    </form>
+
+
+    <div class="mt-4">
+
+        <h5>Existing Departments</h5>
+        <div id="deptlist"></div>
+
+
+        <div class="department-card">
+            <span>Software Engineering</span>
+            <i class="fa-solid fa-pen edit-icon"></i>
+        </div>
+
+
+        <div class="department-card">
+            <span>Computer Science</span>
+            <i class="fa-solid fa-pen edit-icon"></i>
+        </div>
+
+
+        <div class="department-card">
+            <span>Electrical Engineering</span>
+            <i class="fa-solid fa-pen edit-icon"></i>
+        </div>
+
+
+        <div class="department-card">
+            <span>Mechanical Engineering</span>
+            <i class="fa-solid fa-pen edit-icon"></i>
+        </div>
+
+
+        <div class="department-card">
+            <span>Information Technology</span>
+            <i class="fa-solid fa-pen edit-icon"></i>
+        </div>
+
+
+        <div class="department-card">
+            <span>Cyber Security</span>
+            <i class="fa-solid fa-pen edit-icon"></i>
+        </div>
+
+
+    </div>
+
+</div>
+<script src="script.js"></script>
+<script src="bootstrap.bundle.js"></script>
+
+</body>
+</html>

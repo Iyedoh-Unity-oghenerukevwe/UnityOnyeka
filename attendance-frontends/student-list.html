@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Students List</title>
+
+    <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="font-awesome/css/all.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', sans-serif;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .container-box {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+        }
+
+        .table {
+            color: #fff;
+        }
+
+        .badge-present {
+            background: #22c55e;
+        }
+
+        .badge-absent {
+            background: #ef4444;
+        }
+
+        .action-btn {
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .edit {
+            color: #facc15;
+        }
+
+        .delete {
+            color: #ef4444;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <nav class="navbar px-4 d-flex justify-content-between">
+
+        <a href="index.html" class="navbar-brand text-white">
+            <i class="fa-solid fa-house"></i> Dashboard
+        </a>
+
+        <a href="add-students.html" class="btn btn-outline-light btn-sm">
+            <i class="fa-solid fa-user-plus"></i> Add Student
+        </a>
+
+    </nav>
+
+    <div class="container-box">
+
+        <h4 class="mb-4">
+            <i class="fa-solid fa-users"></i> Students List
+        </h4>
+
+
+        <div class="row mb-4">
+
+            <div class="col-md-4">
+                <input type="text" id="search" class="form-control" placeholder="Search by name or matric">
+            </div>
+
+            <div class="col-md-4">
+                <select id="filterDept" class="form-select">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <select id="filterFaculty" class="form-select">
+                    <option value="">All Faculties</option>
+                </select>
+            </div>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table class="table table-hover">
+
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Matric</th>
+                        <th>Department</th>
+                        <th>Faculty</th>
+                        <th>Level</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="studentsTable"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        // LOAD FILTER OPTIONS
+        function loadFilters() {
+
+            let departments = JSON.parse(localStorage.getItem("departments")) || [];
+            let faculties = JSON.parse(localStorage.getItem("faculties")) || [];
+
+            const deptSelect = document.getElementById("filterDept");
+            const facultySelect = document.getElementById("filterFaculty");
+
+            departments.forEach(d => {
+                deptSelect.innerHTML += `<option>${d}</option>`;
+            });
+
+            faculties.forEach(f => {
+                facultySelect.innerHTML += `<option>${f}</option>`;
+            });
+
+        }
+
+
+        // LOAD STUDENTS
+        function loadStudents() {
+
+            let students = JSON.parse(localStorage.getItem("students")) || [];
+
+            const table = document.getElementById("studentsTable");
+
+            const search = document.getElementById("search").value.toLowerCase();
+            const dept = document.getElementById("filterDept").value;
+            const faculty = document.getElementById("filterFaculty").value;
+
+            table.innerHTML = "";
+
+            students
+                .filter(s =>
+                    (!search || s.name.toLowerCase().includes(search) || s.matric.toLowerCase().includes(search)) &&
+                    (!dept || s.department === dept) &&
+                    (!faculty || s.faculty === faculty)
+                )
+                .forEach((s, index) => {
+
+                    table.innerHTML += `
+<tr>
+
+<td>${index + 1}</td>
+<td>${s.name}</td>
+<td>${s.matric}</td>
+<td>${s.department}</td>
+<td>${s.faculty}</td>
+<td>${s.level}</td>
+
+<td>
+<span class="${s.status === "Present" ? "badge badge-present" : "badge badge-absent"}">
+${s.status}
+</span>
+</td>
+
+<td>${s.date}</td>
+
+<td>
+<i class="fa-solid fa-pen action-btn edit" onclick="editStudent(${index})"></i>
+<i class="fa-solid fa-trash action-btn delete" onclick="deleteStudent(${index})"></i>
+<i class="fa-solid fa-toggle-on action-btn" onclick="toggleStatus(${index})"></i>
+</td>
+
+</tr>
+`;
+
+                });
+
+        }
+
+
+        // DELETE
+        function deleteStudent(index) {
+
+            let students = JSON.parse(localStorage.getItem("students")) || [];
+
+            students.splice(index, 1);
+
+            localStorage.setItem("students", JSON.stringify(students));
+
+            loadStudents();
+
+        }
+
+
+        // EDIT
+        function editStudent(index) {
+
+            let students = JSON.parse(localStorage.getItem("students")) || [];
+
+            let newName = prompt("Edit Name", students[index].name);
+
+            if (newName) {
+                students[index].name = newName;
+                localStorage.setItem("students", JSON.stringify(students));
+                loadStudents();
+            }
+
+        }
+
+
+        // TOGGLE STATUS
+        function toggleStatus(index) {
+
+            let students = JSON.parse(localStorage.getItem("students")) || [];
+
+            students[index].status =
+                students[index].status === "Present" ? "Absent" : "Present";
+
+            localStorage.setItem("students", JSON.stringify(students));
+
+            loadStudents();
+
+        }
+
+
+        // FILTER EVENTS
+        document.getElementById("search").addEventListener("input", loadStudents);
+        document.getElementById("filterDept").addEventListener("change", loadStudents);
+        document.getElementById("filterFaculty").addEventListener("change", loadStudents);
+
+
+        // INIT
+        loadFilters();
+        loadStudents();
+
+    </script>
+
+</body>
+
+</html>

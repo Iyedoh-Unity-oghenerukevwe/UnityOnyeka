@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Student</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="bootstrap.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="font-awesome/css/all.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', sans-serif;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            color: #fff !important;
+            font-weight: bold;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: auto;
+            margin-top: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-title {
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #fff;
+        }
+
+        .form-control::placeholder {
+            color: #ccc;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+            color: #fff;
+        }
+
+        .btn-primary {
+            background: #b16cea;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-primary:hover {
+            background: #9d4edd;
+        }
+
+        .btn-secondary {
+            border-radius: 8px;
+        }
+
+        label {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <nav class="navbar px-4">
+        <a class="navbar-brand" href="index.html">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </nav>
+
+
+    <div class="form-container">
+        <h4 class="form-title">
+            <i class="fa-solid fa-user-plus"></i> Add New Student
+        </h4>
+
+        <form id="studentForm">
+
+
+            <div class="mb-3">
+                <label>Full Name</label>
+                <input type="text" id="name" class="form-control" placeholder="Enter student name" required>
+            </div>
+
+
+            <div class="mb-3">
+                <label>Matric Number</label>
+                <input type="text" id="matric" class="form-control" placeholder="e.g CMP2307601" required>
+            </div>
+
+
+            <div class="mb-3">
+                <label>Department</label>
+                <input type="text" id="department" class="form-control" placeholder="Software Engineering" required>
+            </div>
+
+
+            <div class="mb-3">
+                <label>Level</label>
+                <select id="level" class="form-select" required>
+                    <option value="">Select Level</option>
+                    <option>100 Level</option>
+                    <option>200 Level</option>
+                    <option>300 Level</option>
+                    <option>400 Level</option>
+                </select>
+            </div>
+
+
+            <div class="d-flex justify-content-between">
+                <button type="reset" class="btn btn-secondary">Reset</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Add Student
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="bootstrap.bundle.js"></script>
+
+</body>
+
+</html>

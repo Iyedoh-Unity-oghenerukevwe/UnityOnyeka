@@ -1,0 +1,2 @@
+ALTER TABLE `user`
+ADD COLUMN `active_token` VARCHAR(255) NULL DEFAULT NULL AFTER `password`;

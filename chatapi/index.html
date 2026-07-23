@@ -1,29 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Chat</title>
-    <link rel="stylesheet" href="./bootstrap.css">
-    <style>
-        .mw-70 {
-            max-width: 70%;
-        }
-
-        .cursor-pointer {
-            cursor: pointer;
-        }
-
-        .fs-10 {
-            font-size: 10px;
-        }
-
-        .h-400 {
-            height: 400px;
-        }
+<meta charset="UTF-8">
+<title>Chat</title>
+<link rel="stylesheet" href="./bootstrap.css">
+<style>
+ .mw-70 { 
+    max-width: 70%; 
+}
+.cursor-pointer {
+    cursor: pointer; 
+}
+.fs-10 { 
+    font-size: 10px; 
+}
+ .h-400 { 
+    height: 400px; 
+}
+.bg-pink {
+    background-color: #ffc0cb; 
+}
+.reaction { 
+     font-size: 12px; 
+     padding: 2px 6px; 
+     border-radius: 12px; 
+     background: #fff; 
+     border: 1px solid #ddd; 
+     cursor: pointer; 
+     margin-right: 4px; 
+}
+.reaction.me { 
+     background: #d1e7dd; 
+     border-color: #a3cfbb; 
+}
+ .emoji-picker { 
+     display: none; 
+     position: absolute; 
+     background: #fff; 
+     border: 1px solid #ddd; 
+     border-radius: 8px; 
+     padding: 4px; 
+     gap: 4px; 
+     z-index: 10; 
+     max-width: 300px; 
+     overflow-x: auto; 
+     white-space: nowrap; 
+}
+.emoji-btn { 
+     cursor: pointer; 
+     font-size: 18px; 
+     padding: 2px; 
+     display: inline-block; 
+ }
     </style>
 </head>
-
 <body>
     <nav class="navbar navbar-dark bg-dark">
         <div class="container-fluid">
@@ -31,13 +61,16 @@
             <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
         </div>
     </nav>
+
     <div class="container mt-4">
-        <div id="chatBox" class="border rounded p-3 mb-3 d-flex flex-column bg-light overflow-auto h-400"></div>
+        <div id="alertBox"></div>
+        <div id="chatBox" class="border rounded p-3 mb-3 d-flex flex-column bg-light overflow-auto h-400 position-relative"></div>
         <form id="sendForm" class="d-flex">
             <input type="text" id="message" class="form-control me-2" placeholder="Type message..." required>
             <button class="btn btn-primary">Send</button>
         </form>
     </div>
+
     <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -56,29 +89,118 @@
             </div>
         </div>
     </div>
-    <script src="./bootstrap.bundle.js"></script>
-    <script>
-        const API = "https://apeiron.alwaysdata.net/chatapialwaysdata";
-        const currentUser = JSON.parse(localStorage.getItem('user'));
-        let editModal;
-        if (!localStorage.getItem('token')) window.location = 'login.html';
-        document.addEventListener('DOMContentLoaded', () => {
-            editModal = new bootstrap.Modal(document.getElementById('editModal'));
-            document.getElementById('saveBtn').addEventListener('click', saveEdit);
+
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Delete this message?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="emojiPicker" class="emoji-picker">
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 1)">❤️</span>
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 2)">😂</span>
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 3)">👍</span>
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 4)">😮</span>
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 5)">😢</span>
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 6)">🔥</span>
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 7)">🙏</span>
+        <span class="emoji-btn" onclick="sendReaction(currentReactionMsg, 8)">😍</span>
+
+    </div>
+<script src="./bootstrap.bundle.js"></script>
+<script>
+ const API = "https://apeiron.alwaysdata.net/chatapialwaysdata";
+ const currentUser = JSON.parse(localStorage.getItem('user'));
+ const emoji_map = {
+    1: '❤️',
+    2: '😂',
+    3: '👍',
+    4: '😮',
+    5: '😢',
+    6: '🔥',
+    7: '🙏',
+    8: '😍'
+};
+
+let editModal;
+let deleteModal;
+let deleteId = null;
+let currentReactionMsg = null;
+
+ if (!localStorage.getItem('token')) window.location = 'login.html';
+
+ document.addEventListener('DOMContentLoaded', () => {
+ document.getElementById('emojiPicker').style.display = 'none';
+ editModal = new bootstrap.Modal(document.getElementById('editModal'));
+ deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+ document.getElementById('saveBtn').addEventListener('click', saveEdit);
+ document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+ document.addEventListener('click', (e) => { 
+    if (!e.target.closest('#emojiPicker') && !e.target.closest('.mw-70')) 
+            document.getElementById('emojiPicker').style.display = 'none'; 
+            });
         });
-        function logout() {
-            localStorage.clear();
-            window.location = 'login.html';
+
+     function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+            setTimeout(() => { 
+                const alert = bootstrap.Alert.getOrCreateInstance(alertBox.querySelector('.alert')); 
+                alert.close(); 
+            }, 3000);
         }
-        function toggleActions(id) {
-            document.querySelectorAll('.msg-actions').forEach(el => el.classList.add('d-none'));
-            const el = document.getElementById(`actions-${id}`);
-            if (el) el.classList.toggle('d-none');
+
+        function logout() { 
+            localStorage.clear(); 
+            window.location = 'login.html'; 
         }
+
+        function toggleActions(id) { 
+            document.querySelectorAll('.msg-actions').forEach(el => el.classList.add('d-none')); 
+            const el = document.getElementById(`actions-${id}`); 
+            if (el) el.classList.toggle('d-none'); 
+        }
+
+        function showEmojiPicker(e, msgId) { 
+            e.stopPropagation(); 
+            const picker = document.getElementById('emojiPicker'); 
+            currentReactionMsg = msgId; 
+            picker.style.display = 'inline-flex'; 
+            picker.style.left = e.pageX + 'px'; 
+            picker.style.top = e.pageY + 'px'; 
+        }
+
+        async function sendReaction(messageId, emojiId) { 
+            document.getElementById('emojiPicker').style.display = 'none'; 
+            const res = await fetch(`${API}/AddReaction.php`, { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + localStorage.getItem('token') 
+                }, 
+                body: JSON.stringify({ message_id: messageId, emoji_id: emojiId }) 
+            }); 
+            const data = await res.json(); 
+            if(!data.success) showAlert(data.error, 'danger'); 
+            loadMessages(); 
+        }
+
         async function loadMessages() {
             try {
-                const res = await fetch(`${API}/GetMessages.php`, {
-                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                const res = await fetch(`${API}/GetMessages.php`, { 
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } 
                 });
                 const data = await res.json();
                 if (!data.success) return;
@@ -86,82 +208,111 @@
                 const myId = Number(currentUser.id);
                 data.messages.forEach(msg => {
                     const isMe = Number(msg.sender_id) === myId;
+                    let reactionsHtml = '';
+                    if(msg.reactions && msg.reactions.length > 0){
+                        reactionsHtml = '<div class="d-flex mt-1">';
+                        msg.reactions.forEach(r => { 
+                            const meReacted = r.users.includes(myId); 
+                            const emojiId = Object.keys(emoji_map).find(k => emoji_map[k] === r.emoji);
+                            reactionsHtml += `<div class="reaction ${meReacted ? 'me' : ''}" onclick="sendReaction(${msg.id}, ${emojiId})">${r.emoji} ${r.count}</div>`; 
+                        });
+                        reactionsHtml += '</div>';
+                    }
                     chatBox.innerHTML += `
-<div class="d-flex ${isMe ? 'justify-content-end' : 'justify-content-start'} mb-2">
-<div class="p-2 rounded ${isMe ? 'bg-primary text-white' : 'bg-light text-dark'} mw-70 cursor-pointer" onclick="${isMe ? `toggleActions(${msg.id})` : ''}">
-${!isMe ? `<div class="fw-bold small">${msg.username}</div>` : ''}
-<div>${msg.message} ${msg.is_edited == 1 ? '<span class="small">(edited)</span>' : ''}</div>
-<div class="small text-end ${isMe ? 'text-white-50' : 'text-muted'} fs-10">${msg.created_at}</div>
-${isMe ? `
-<div id="actions-${msg.id}" class="mt-1 d-flex gap-1 msg-actions d-none">
-<button class="btn btn-sm btn-light" onclick="event.stopPropagation(); openEdit(${msg.id}, \`${msg.message.replace(/`/g, '\\`')}\`)">Edit</button>
-<button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteMsg(${msg.id})">Delete</button>
-</div>` : ''}
-</div>
-</div>
-`;
+                        <div class="d-flex ${isMe ? 'justify-content-end' : 'justify-content-start'} mb-2">
+                            <div class="p-2 rounded ${isMe ? 'bg-primary text-white' : 'bg-pink text-dark'} mw-70 cursor-pointer position-relative" onclick="${isMe ? `toggleActions(${msg.id})` : `showEmojiPicker(event, ${msg.id})`}">
+                                ${!isMe ? `<div class="fw-bold small">${msg.username}</div>` : ''}
+                                <div>${msg.message} ${msg.is_edited == 1 ? '<span class="small">(edited)</span>' : ''}</div>
+                                <div class="small text-end ${isMe ? 'text-white-50' : 'text-muted'} fs-10">${msg.created_at}</div>
+                                ${reactionsHtml}
+                                ${isMe ? `<div id="actions-${msg.id}" class="mt-1 d-flex gap-1 msg-actions d-none">
+                                    <button class="btn btn-sm btn-light" onclick="event.stopPropagation(); openEdit(${msg.id}, \`${msg.message.replace(/`/g, '\\`')}\`)">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteMsg(${msg.id})">Delete</button>
+                                </div>` : ''}
+                            </div>
+                        </div>
+                    `;
                 });
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (e) { console.log(e) }
+            } catch (e) {}
         }
+
         document.getElementById('sendForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const token = localStorage.getItem('token');
             if (!token) { window.location = 'login.html'; return; }
-            const res = await fetch(`${API}/SendMessages.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ message: message.value })
+            const res = await fetch(`${API}/SendMessages.php`, { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + token 
+                }, 
+                body: JSON.stringify({ message: message.value }) 
             });
             const data = await res.json();
-            if (data.success) {
-                message.value = '';
-                loadMessages();
-            } else {
-                alert(data.message || 'Send failed');
+            if (data.success) { 
+                message.value = ''; 
+                loadMessages(); 
+            } else { 
+                showAlert(data.message || 'Send failed', 'danger'); 
             }
         });
-        function openEdit(id, msg) {
-            document.getElementById('editId').value = id;
-            document.getElementById('editInput').value = msg;
-            toggleActions(id);
-            editModal.show();
-        }
-        async function saveEdit() {
-            const id = document.getElementById('editId').value;
-            const msg = document.getElementById('editInput').value;
-            const token = localStorage.getItem('token');
-            if (!token) { window.location = 'login.html'; return; }
-            const res = await fetch(`${API}/EditMessages.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ message_id: Number(id), message: msg })
-            });
-            const data = await res.json();
-            alert(data.message);
-            if (data.success) {
-                editModal.hide();
-                loadMessages();
-            }
-        }
-        async function deleteMsg(id) {
-            if (!confirm('Delete this message?')) return;
-            const token = localStorage.getItem('token');
-            if (!token) { window.location = 'login.html'; return; }
-            const res = await fetch(`${API}/DeleteMessages.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ message_id: Number(id) })
-            });
-            const data = await res.json();
-            alert(data.message);
-            if (data.success) {
-                loadMessages();
-            }
-        }
-        loadMessages();
-        setInterval(loadMessages, 3000);
-    </script>
-</body>
 
+        function openEdit(id, msg) { 
+            document.getElementById('editId').value = id; 
+            document.getElementById('editInput').value = msg; 
+            toggleActions(id); 
+            editModal.show(); 
+        }
+
+        async function saveEdit() { 
+            const id = document.getElementById('editId').value; 
+            const msg = document.getElementById('editInput').value; 
+            const token = localStorage.getItem('token'); 
+            if (!token) { window.location = 'login.html'; return; } 
+            const res = await fetch(`${API}/EditMessages.php`, { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + token 
+                }, 
+                body: JSON.stringify({ message_id: Number(id), message: msg }) 
+            }); 
+            const data = await res.json(); 
+            showAlert(data.message, data.success ? 'success' : 'danger'); 
+            if (data.success) { 
+                editModal.hide(); 
+                loadMessages(); 
+            } 
+        }
+
+        function deleteMsg(id) { 
+            deleteId = id; 
+            toggleActions(id); 
+            deleteModal.show(); 
+        }
+
+        async function confirmDelete() { 
+            const id = deleteId; 
+            const token = localStorage.getItem('token'); 
+            if (!token) { window.location = 'login.html'; return; } 
+            const res = await fetch(`${API}/DeleteMessages.php`, { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + token 
+                }, 
+                body: JSON.stringify({ message_id: Number(id) }) 
+            }); 
+            const data = await res.json(); 
+            showAlert(data.message, data.success ? 'success' : 'danger'); 
+            if (data.success) { 
+                deleteModal.hide(); 
+                loadMessages(); 
+            } 
+        }
+
+loadMessages();
+setInterval(loadMessages, 3000);
+</script>
+</body>
 </html>
